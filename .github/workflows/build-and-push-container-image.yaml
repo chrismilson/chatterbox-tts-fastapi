@@ -22,9 +22,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up QEMU (for multiarch)
-        uses: docker/setup-qemu-action@v3.6.0
-
       - name: Build and push multiarch image
         id: build
         uses: redhat-actions/buildah-build@v2
@@ -32,7 +29,6 @@ jobs:
           containerfiles: ./Containerfile
           image: ${{ env.IMAGE_NAME }}
           tags: ${{ env.IMAGE_TAGS }}
-          platforms: linux/amd64,linux/arm64
 
       - name: Push to GHCR
         id: push
