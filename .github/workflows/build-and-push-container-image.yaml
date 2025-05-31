@@ -9,7 +9,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -18,34 +18,27 @@ jobs:
       id-token: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+      - name: Set up QEMU (for multiarch)
+        uses: docker/setup-qemu-action@sha256:7b3ed1bfb1e4be5dd764f6b5f7f65b4411c6e7d3663f8b5e4f9b4a6ea7f9a6e8
+
+      - name: Set up Buildah
+        uses: redhat-actions/buildah-build@sha256:0f5f564b38ce101f664a76bff9c7a9ea9f4dc9a7c4a1a9b5e5ce5bdbd6b7b5a3
+
+      - name: Log in to registry
+        uses: redhat-actions/podman-login@sha256:2b1f1d4a20b6b4e21e8c8b9c0a1a6b7f8b9c7a1d1e4a2b1c3d8a9c7e2b1f1d4a
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+      - name: Build and push multiarch image
+        uses: redhat-actions/buildah-build@sha256:0f5f564b38ce101f664a76bff9c7a9ea9f4dc9a7c4a1a9b5e5ce5bdbd6b7b5a3
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Build and push Docker image
-        id: push
-        uses: docker/build-push-action@f2a1d5e99d037542a71f64918e516c093c6f3fc4
-        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ github.ref_name }},latest
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
