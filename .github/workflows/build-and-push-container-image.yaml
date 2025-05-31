@@ -35,7 +35,7 @@ jobs:
 
       - name: Push to GHCR
         id: push
-        uses: redhat-actions/push-to-registry@...
+        uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ steps.build.outputs.image }}
           tags: ${{ steps.build.outputs.tags }}
